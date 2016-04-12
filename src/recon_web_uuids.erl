@@ -15,7 +15,6 @@
 
 -module(recon_web_uuids).
 -behaviour(gen_server).
- 
 -define(DEFAULT_ALGORITHM, random).
 
 -export([start_link/0, stop/0]).
@@ -37,7 +36,7 @@ random() ->
     list_to_binary(to_hex(crypto:rand_bytes(16))).
 
 utc_random() ->
-    Now = {_, _, Micro} = now(),
+    Now = {_, _, Micro} = os:timestamp(),
     Nowish = calendar:now_to_universal_time(Now),
     Nowsecs = calendar:datetime_to_gregorian_seconds(Nowish),
     Then = calendar:datetime_to_gregorian_seconds({{1970, 1, 1}, {0, 0, 0}}),
@@ -83,16 +82,11 @@ inc() ->
     crypto:rand_uniform(1, 16#ffe).
 
 state() ->
-%    AlgoStr = couch_config:get("uuids", "algorithm", "random"),
-    case to_existing_atom(?DEFAULT_ALGORITHM) of
-        random ->
-            random;
-        utc_random ->
-            utc_random;
-        sequential ->
-            {sequential, new_prefix(), inc()};
-        Unknown ->
-            throw({unknown_uuid_algorithm, Unknown})
+    case ?DEFAULT_ALGORITHM of
+        random -> random;
+        utc_random -> utc_random;
+        sequential -> {sequential, new_prefix(), inc()};
+        Unknown -> throw({unknown_uuid_algorithm, Unknown})
     end.
 %% Internal functions
 to_hex([]) ->
@@ -104,12 +98,3 @@ to_hex([H|T]) ->
 
 to_digit(N) when N < 10 -> $0 + N;
 to_digit(N)             -> $a + N-10.
-
-% works like list_to_existing_atom, except can be list or binary and it
-% gives you the original value instead of an error if no existing atom.
-to_existing_atom(V) when is_list(V)->
-    try list_to_existing_atom(V) catch _ -> V end;
-to_existing_atom(V) when is_binary(V)->
-    try list_to_existing_atom(binary_to_list(V)) catch _ -> V end;
-to_existing_atom(V) when is_atom(V)->
-    V.

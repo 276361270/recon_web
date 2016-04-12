@@ -35,7 +35,8 @@ var alloc_allocated_instances = {};
 var cache_hit = {};
 
 // replace the url for  yourself
-var socket =  io.connect('http://127.0.0.1:8080'); 
+var HostPort = 'http://127.0.0.1:8080';
+var socket =  io.connect(HostPort);
 socket.on('connect', function() {
     output('<span class="connect-msg">Client has connected to the server!</span>','');
 });
@@ -132,9 +133,13 @@ function update_every_heartbeat(data){
 function create_scheduler_chart(logical_processors){
  if($('div').hasClass('scheduler')){}
     else{
+        var last_scheduler = $("#outer_scheduler");
         for(var i=logical_processors; i > 0 ; i--){
             var div_left = '<div class = scheduler id="scheduler_usage' + i + '" style="with:120px; display:inline-block;text-align:center;background:#FFF;"></div>';
-	    $("#outer_schedule").append(div_left);
+            if( (logical_processors - i) % 4 == 0 && (logical_processors - i) >= 4)
+                {$("#outer_scheduler").after('<div id="outer_scheduler' + i + '"style="width:100%;height:270px;text-align:center;background:#FFF;"></div>');
+            last_scheduler = $("#outer_scheduler" +i);}            
+            last_scheduler.append(div_left);
         };
         $(document).ready(function (){
             for(var j = 1; j< logical_processors +1; j++){        
